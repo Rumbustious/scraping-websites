@@ -4,7 +4,7 @@ from jarir_scraper import JarirScraper  # Import your scraper class
 scraper = JarirScraper("Jarir")
 
 # Choose a search term (Example: "laptop")
-search_term = "laptop"
+search_term = "iphone 16"
 
 # Start scraping
 print(f"Searching for: {search_term}")
