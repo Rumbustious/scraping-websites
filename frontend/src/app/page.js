@@ -24,7 +24,7 @@ export default function Home() {
 
   return (
     <div className="container">
-      <h1>Jarir Store Scraper</h1>
+      <h1 className="text-4xl m-3">Start your product search over online stores.</h1>
       <div className="search-bar">
         <input
           type="text"
