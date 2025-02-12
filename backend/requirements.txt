@@ -2,3 +2,4 @@ fastapi
 uvicorn
 selenium
 beautifulsoup4
+magnum
