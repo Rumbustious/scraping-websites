@@ -122,6 +122,11 @@ class JarirScraper(StoreScraper):
                         # Extract title and link
                         title_elem = product.find("p", class_="product-title__title")
                         link_elem = product.find("a", class_="product-tile__link")
+                        
+                        # Extract rating stars
+                        rating = product.find("div", class_="rating-star")
+                        rating = rating.get_text(strip=True) if rating else "N/A"
+
 
                         # Extract price
                         price_elem = product.find("div", class_="price")
@@ -154,6 +159,7 @@ class JarirScraper(StoreScraper):
                                 "price": price,
                                 "info": info,
                                 "image_url": image_url,
+                                "rating": rating,
                             }
                     except AttributeError as e:
                         print(f"Error extracting product details: {e}. Skipping product...")

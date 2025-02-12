@@ -15,6 +15,8 @@ for index, product in enumerate(products, start=1):
     print(f"\nProduct {index}:")
     print(f"Title: {product['title']}")
     print(f"Price: {product['price']} SAR")
+    print(f"Info: {product['info']}")
+    print(f"Rating: {product['rating']}")
     print(f"Link: {product['link']}")
     print(f"Image URL: {product['image_url']}")
 
