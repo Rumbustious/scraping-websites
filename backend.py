@@ -1,7 +1,7 @@
 # Language: Python
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from jarir_scraper import JarirScraper  # [jarir_scraper.py](jarir_scraper.py)
+from scraper import JarirScraper  # [jarir_scraper.py](jarir_scraper.py)
 import uvicorn
 
 app = FastAPI()
