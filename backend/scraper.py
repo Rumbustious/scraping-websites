@@ -270,9 +270,9 @@ class AmazonScraper(StoreScraper):
                                     "title": title,
                                     "link": link,
                                     "price": price,
-                                    "rating": rating,
                                     "info": "N/A",
                                     "image_url": image_url,
+                                    "rating": rating,
                                 }
                         except Exception as e:
                             print(f"Error extracting product details: {e}. Skipping product...")

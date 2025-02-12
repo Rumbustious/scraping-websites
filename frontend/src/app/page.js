@@ -8,11 +8,13 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showMore, setShowMore] = useState({});
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
     setLoading(true);
+    setError(null);
     try {
       const response = await axios.get(
         `http://localhost:8000/api/search?q=${encodeURIComponent(searchTerm)}`
@@ -20,6 +22,7 @@ export default function Home() {
       setProducts(response.data.products);
     } catch (error) {
       console.error("Error fetching products:", error);
+      setError("Failed to fetch products. Please try again.");
     }
     setLoading(false);
   };
@@ -44,13 +47,18 @@ export default function Home() {
         <button onClick={handleSearch}>Search</button>
       </div>
       {loading && <div className="loader">Loading...</div>}
+      {error && <div className="error">{error}</div>}
       <div className="product-grid">
         {products.map((product, index) => (
           <div key={index} className="product-card">
-            <img src="/jarir.svg" alt="Jarir Logo" className="jarir-logo" />
+            <img
+              src={product.store === "Jarir" ? "/jarir.svg" : "/Amazon_logo.svg"}
+              alt={`${product.store} Logo`}
+              className="store-logo"
+            />
             <img src={product.image_url} alt={product.title} />
             <h3>{product.title}</h3>
-            <p className="text-red-500 text-lg font-bold">{product.price} <span className="text-gray-600">SAR</span></p>
+            <p className="price">{product.price} <span className="currency">SAR</span></p>
             <div className="rating">
               {product.rating} <span className="star-icon">★</span>
             </div>
