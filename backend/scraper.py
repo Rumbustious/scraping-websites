@@ -41,6 +41,9 @@ class StoreScraper:
         temp_dir = tempfile.mkdtemp()
         options.add_argument(f"--user-data-dir={temp_dir}")
 
+        # Set the cache directory to a temporary directory
+        options.add_argument(f"--disk-cache-dir={temp_dir}")
+
         # Initialize Edge WebDriver (Ensure `msedgedriver` is in PATH)
         service = EdgeService()
         driver = webdriver.Edge(service=service, options=options)
