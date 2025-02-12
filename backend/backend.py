@@ -1,13 +1,15 @@
-# Language: Python
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from scraper import JarirScraper, AmazonScraper  # [jarir_scraper.py](jarir_scraper.py)
+from scraper import JarirScraper, AmazonScraper
 import uvicorn
 
 app = FastAPI()
 
-# Allow CORS from React development server
-origins = ["http://localhost:3000"]
+# Allow CORS from React development server and Vercel deployment
+origins = [
+    "http://localhost:3000",
+    "https://scrape-project-freelance.vercel.app/"
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
