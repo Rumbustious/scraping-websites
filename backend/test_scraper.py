@@ -1,4 +1,4 @@
-from backend.scraper import JarirScraper, AmazonScraper
+from scraper import JarirScraper, AmazonScraper
 
 # Initialize the scraper
 scraper = JarirScraper("Jarir")
