@@ -9,6 +9,8 @@ from bs4 import BeautifulSoup
 from time import sleep
 import urllib.parse
 import re
+import tempfile
+import os
 
 
 class StoreScraper:
@@ -34,6 +36,10 @@ class StoreScraper:
         options.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edg/109.0.0.0 Safari/537.36"
         )
+
+        # Use a temporary directory for WebDriver cache
+        temp_dir = tempfile.mkdtemp()
+        options.add_argument(f"--user-data-dir={temp_dir}")
 
         # Initialize Edge WebDriver (Ensure `msedgedriver` is in PATH)
         service = EdgeService()
@@ -388,4 +394,3 @@ class AmazonScraper(StoreScraper):
             return f"{normalized_price:.2f}"
         except Exception:
             return "N/A"
-
