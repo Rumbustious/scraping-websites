@@ -17,7 +17,7 @@ export default function Home() {
     setError(null);
     try {
       const response = await axios.get(
-        `/api/search?q=${encodeURIComponent(searchTerm)}`
+        `http://localhost:8000/api/search?q=${encodeURIComponent(searchTerm)}`
       );
       setProducts(response.data.products);
     } catch (error) {

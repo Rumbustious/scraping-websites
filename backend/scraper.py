@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 from time import sleep
 import urllib.parse
 import re
-import os
 
 
 class StoreScraper:
@@ -35,12 +34,6 @@ class StoreScraper:
         options.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edg/109.0.0.0 Safari/537.36"
         )
-
-        # Use the /tmp directory for WebDriver cache and user data
-        temp_dir = "/tmp/webdriver"
-        os.makedirs(temp_dir, exist_ok=True)
-        options.add_argument(f"--user-data-dir={temp_dir}")
-        options.add_argument(f"--disk-cache-dir={temp_dir}")
 
         # Initialize Edge WebDriver (Ensure `msedgedriver` is in PATH)
         service = EdgeService()
