@@ -34,6 +34,7 @@ class StoreScraper:
         options.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edg/109.0.0.0 Safari/537.36"
         )
+        
 
         # Initialize Edge WebDriver (Ensure `msedgedriver` is in PATH)
         service = EdgeService()
