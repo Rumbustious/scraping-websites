@@ -11,6 +11,10 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showMore, setShowMore] = useState({});
+  const [storeFilter, setStoreFilter] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [minRating, setMinRating] = useState("");
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -35,6 +39,17 @@ export default function Home() {
     }));
   };
 
+  const filteredProducts = products.filter((product) => {
+    const price = parseFloat(product.price);
+    const rating = parseFloat(product.rating);
+    const matchesStore = storeFilter ? product.store === storeFilter : true;
+    const matchesPrice =
+      (!minPrice || price >= parseFloat(minPrice)) &&
+      (!maxPrice || price <= parseFloat(maxPrice));
+    const matchesRating = !minRating || rating >= parseFloat(minRating);
+    return matchesStore && matchesPrice && matchesRating;
+  });
+
   return (
     <div className="container">
       <h1 className="text-4xl m-3">
@@ -49,6 +64,34 @@ export default function Home() {
         />
         <button onClick={handleSearch}>Search</button>
       </div>
+      <div className="filters">
+        <select
+          value={storeFilter}
+          onChange={(e) => setStoreFilter(e.target.value)}
+        >
+          <option value="">All Stores</option>
+          <option value="Jarir">Jarir</option>
+          <option value="Amazon">Amazon</option>
+        </select>
+        <input
+          type="number"
+          placeholder="Min Price"
+          value={minPrice}
+          onChange={(e) => setMinPrice(e.target.value)}
+        />
+        <input
+          type="number"
+          placeholder="Max Price"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+        />
+        <input
+          type="number"
+          placeholder="Min Rating"
+          value={minRating}
+          onChange={(e) => setMinRating(e.target.value)}
+        />
+      </div>
       {loading && (
         <div className="product-grid">
           {Array.from({ length: 10 }).map((_, index) => (
@@ -59,7 +102,7 @@ export default function Home() {
       {error && <div className="error">{error}</div>}
       {!loading && (
         <div className="product-grid">
-          {products.map((product, index) => (
+          {filteredProducts.map((product, index) => (
             <div key={index} className="product-card">
               <img
                 src={
