@@ -7,6 +7,7 @@ import Skeleton from "./Skeleton";
 import { FaStar, FaFilter } from "react-icons/fa";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
+import Navbar from "./Navbar"; // Import the Navbar component
 
 const Sidebar = ({
   storeFilter,
@@ -163,100 +164,103 @@ export default function Home() {
   });
 
   return (
-    <div className="flex">
-      <Sidebar
-        storeFilter={storeFilter}
-        setStoreFilter={setStoreFilter}
-        minPrice={minPrice}
-        setMinPrice={setMinPrice}
-        maxPrice={maxPrice}
-        setMaxPrice={setMaxPrice}
-        minRating={minRating}
-        setMinRating={setMinRating}
-        maxProductPrice={maxProductPrice}
-        isOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        resetFilters={resetFilters}
-      />
-      <div className="container mx-auto p-4">
-        <h1 className="text-4xl font-bold mb-6 text-center">
-          Start your product search over online stores.
-        </h1>
-        <div className="search-bar flex justify-center mb-6">
-          <input
-            type="text"
-            placeholder="Enter search term"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            onClick={handleSearch}
-            className="p-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Search
-          </button>
-          <button
-            className="p-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ml-2"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          >
-            <FaFilter />
-          </button>
-        </div>
-        {loading && (
-          <div className="product-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 10 }).map((_, index) => (
-              <Skeleton key={index} />
-            ))}
+    <div>
+      <Navbar /> {/* Add the Navbar component */}
+      <div className="flex">
+        <Sidebar
+          storeFilter={storeFilter}
+          setStoreFilter={setStoreFilter}
+          minPrice={minPrice}
+          setMinPrice={setMinPrice}
+          maxPrice={maxPrice}
+          setMaxPrice={setMaxPrice}
+          minRating={minRating}
+          setMinRating={setMinRating}
+          maxProductPrice={maxProductPrice}
+          isOpen={isSidebarOpen}
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          resetFilters={resetFilters}
+        />
+        <div className="container mx-auto p-4">
+          <h1 className="text-4xl font-bold mb-6 text-center">
+            Start your product search over online stores.
+          </h1>
+          <div className="search-bar flex justify-center mb-6">
+            <input
+              type="text"
+              placeholder="Enter search term"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleSearch}
+              className="p-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Search
+            </button>
+            <button
+              className="p-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ml-2"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            >
+              <FaFilter />
+            </button>
           </div>
-        )}
-        {error && <div className="error text-red-500 text-center">{error}</div>}
-        {!loading && (
-          <div className="product-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProducts.map((product, index) => (
-              <div key={index} className="product-card border p-4 rounded-md shadow-md">
-                <img
-                  src={
-                    product.store === "Jarir" ? "/jarir.svg" : "/Amazon_logo.svg"
-                  }
-                  alt={`${product.store} Logo`}
-                  className="store-logo w-12 h-12 mb-4"
-                />
-                <img src={product.image_url} alt={product.title} className="mb-4" />
-                <h3 className="text-lg font-semibold mb-2">{product.title}</h3>
-                <p className="price text-red-500 font-bold mb-2">
-                  {product.price} <span className="currency">SAR</span>
-                </p>
-                <div className="rating flex items-center mb-2">
-                  {product.rating} <span className="star-icon text-yellow-500 ml-1">★</span>
-                </div>
-                <div className="info mb-4">
-                  {product.info
-                    .split(" | ")
-                    .slice(0, showMore[index] ? undefined : 3)
-                    .map((feature, idx) => (
-                      <span key={idx} className="info-box bg-gray-100 p-2 rounded-md mr-2 mb-2 inline-block">
-                        {feature}
-                      </span>
-                    ))}
-                  {product.info.split(" | ").length > 3 && (
-                    <button
-                      className="show-more-button text-blue-500 hover:underline"
-                      onClick={() => toggleShowMore(index)}
-                    >
-                      {showMore[index] ? "Show Less" : "Show More"}
+          {loading && (
+            <div className="product-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 10 }).map((_, index) => (
+                <Skeleton key={index} />
+              ))}
+            </div>
+          )}
+          {error && <div className="error text-red-500 text-center">{error}</div>}
+          {!loading && (
+            <div className="product-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredProducts.map((product, index) => (
+                <div key={index} className="product-card border p-4 rounded-md shadow-md">
+                  <img
+                    src={
+                      product.store === "Jarir" ? "/jarir.svg" : "/Amazon_logo.svg"
+                    }
+                    alt={`${product.store} Logo`}
+                    className="store-logo w-12 h-12 mb-4"
+                  />
+                  <img src={product.image_url} alt={product.title} className="mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">{product.title}</h3>
+                  <p className="price text-red-500 font-bold mb-2">
+                    {product.price} <span className="currency">SAR</span>
+                  </p>
+                  <div className="rating flex items-center mb-2">
+                    {product.rating} <span className="star-icon text-yellow-500 ml-1">★</span>
+                  </div>
+                  <div className="info mb-4">
+                    {product.info
+                      .split(" | ")
+                      .slice(0, showMore[index] ? undefined : 3)
+                      .map((feature, idx) => (
+                        <span key={idx} className="info-box bg-gray-100 p-2 rounded-md mr-2 mb-2 inline-block">
+                          {feature}
+                        </span>
+                      ))}
+                    {product.info.split(" | ").length > 3 && (
+                      <button
+                        className="show-more-button text-blue-500 hover:underline"
+                        onClick={() => toggleShowMore(index)}
+                      >
+                        {showMore[index] ? "Show Less" : "Show More"}
+                      </button>
+                    )}
+                  </div>
+                  <Link href={product.link} passHref>
+                    <button className="view-product-button bg-green-500 text-white p-2 rounded-md hover:bg-green-600">
+                      View Product
                     </button>
-                  )}
+                  </Link>
                 </div>
-                <Link href={product.link} passHref>
-                  <button className="view-product-button bg-green-500 text-white p-2 rounded-md hover:bg-green-600">
-                    View Product
-                  </button>
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
