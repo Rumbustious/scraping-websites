@@ -14,22 +14,8 @@ const Navbar = () => {
           className="mr-4"
         />
       </div>
-      <span className="text-white text-xl font-bold justify-center">
+      <div className="text-white text-xl font-bold justify-center">
         Store Scraper
-      </span>
-      <div className="flex space-x-4">
-        <Link
-          href="/"
-          className="text-white hover:bg-green-700 hover:text-gray-300 px-3 py-2 rounded-md"
-        >
-          Home
-        </Link>
-        <Link
-          href="/team"
-          className="text-white hover:bg-green-700 hover:text-gray-300 px-3 py-2 rounded-md"
-        >
-          Team Members
-        </Link>
       </div>
     </nav>
   );
