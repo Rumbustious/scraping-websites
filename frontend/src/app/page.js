@@ -9,6 +9,36 @@ import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 import Navbar from "./Navbar"; // Import the Navbar component
 
+async function processStream(reader, setProducts, setError) {
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    // Process complete lines
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || ""; // Save incomplete line for next chunk
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const product = JSON.parse(line);
+        if (product.error) {
+          setError(product.error);
+        } else {
+          setProducts((prev) => [...prev, product]);
+        }
+      } catch (e) {
+        console.error("Error parsing JSON:", e);
+      }
+    }
+  }
+}
+
 const Sidebar = ({
   storeFilter,
   setStoreFilter,
@@ -58,7 +88,9 @@ const Sidebar = ({
           </select>
         </div>
         <div className="mb-4">
-          <label className="block mb-2 font-semibold text-center">Price Range</label>
+          <label className="block mb-2 font-semibold text-center">
+            Price Range
+          </label>
           <Slider
             range
             min={0}
@@ -116,7 +148,9 @@ export default function Home() {
 
   useEffect(() => {
     if (products.length > 0) {
-      const maxPrice = Math.max(...products.map((product) => parseFloat(product.price)));
+      const maxPrice = Math.max(
+        ...products.map((product) => parseFloat(product.price))
+      );
       setMaxProductPrice(maxPrice);
       setMaxPrice(maxPrice);
     }
@@ -126,14 +160,21 @@ export default function Home() {
     if (!searchTerm.trim()) return;
     setLoading(true);
     setError(null);
+    setProducts([]); // Clear previous results
+
     try {
-      const response = await axios.get(
+      const response = await fetch(
         `http://localhost:8000/api/search?q=${encodeURIComponent(searchTerm)}`
       );
-      setProducts(response.data.products);
+
+      if (!response.ok) throw new Error("Failed to fetch");
+      if (!response.body) throw new Error("No response body");
+
+      const reader = response.body.getReader();
+      await processStream(reader, setProducts, setError);
     } catch (error) {
       console.error("Error fetching products:", error);
-      setError("Failed to fetch products. Please try again.");
+      setError(error.message || "Failed to fetch products. Please try again.");
     }
     setLoading(false);
   };
@@ -159,13 +200,16 @@ export default function Home() {
     const matchesPrice =
       (!minPrice || price >= parseFloat(minPrice)) &&
       (!maxPrice || price <= parseFloat(maxPrice));
-    const matchesRating = minRating === "All" ? true : !minRating || rating >= parseFloat(minRating);
+    const matchesRating =
+      minRating === "All"
+        ? true
+        : !minRating || rating >= parseFloat(minRating);
     return matchesStore && matchesPrice && matchesRating;
   });
 
   return (
-    <div>
-      <Navbar /> {/* Add the Navbar component */}
+    <div className="relative pb-16">
+      <Navbar />
       <div className="flex">
         <Sidebar
           storeFilter={storeFilter}
@@ -213,32 +257,49 @@ export default function Home() {
               ))}
             </div>
           )}
-          {error && <div className="error text-red-500 text-center">{error}</div>}
+          {error && (
+            <div className="error text-red-500 text-center">{error}</div>
+          )}
           {!loading && (
             <div className="product-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredProducts.map((product, index) => (
-                <div key={index} className="product-card border p-4 rounded-md shadow-md">
+                <div
+                  key={index}
+                  className="product-card border p-4 rounded-md shadow-md"
+                >
                   <img
                     src={
-                      product.store === "Jarir" ? "/jarir.svg" : "/Amazon_logo.svg"
+                      product.store === "Jarir"
+                        ? "/jarir.svg"
+                        : "/Amazon_logo.svg"
                     }
                     alt={`${product.store} Logo`}
                     className="store-logo w-12 h-12 mb-4"
                   />
-                  <img src={product.image_url} alt={product.title} className="mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">{product.title}</h3>
+                  <img
+                    src={product.image_url}
+                    alt={product.title}
+                    className="mb-4"
+                  />
+                  <h3 className="text-lg font-semibold mb-2">
+                    {product.title}
+                  </h3>
                   <p className="price text-red-500 font-bold mb-2">
                     {product.price} <span className="currency">SAR</span>
                   </p>
                   <div className="rating flex items-center mb-2">
-                    {product.rating} <span className="star-icon text-yellow-500 ml-1">★</span>
+                    {product.rating}{" "}
+                    <span className="star-icon text-yellow-500 ml-1">★</span>
                   </div>
                   <div className="info mb-4">
                     {product.info
                       .split(" | ")
                       .slice(0, showMore[index] ? undefined : 3)
                       .map((feature, idx) => (
-                        <span key={idx} className="info-box bg-gray-100 p-2 rounded-md mr-2 mb-2 inline-block">
+                        <span
+                          key={idx}
+                          className="info-box bg-gray-100 p-2 rounded-md mr-2 mb-2 inline-block"
+                        >
                           {feature}
                         </span>
                       ))}
@@ -261,6 +322,9 @@ export default function Home() {
             </div>
           )}
         </div>
+      </div>
+      <div className="fixed bottom-0 left-0 w-full bg-gray-800 text-white text-center p-4">
+        Team members: Abdullah Faleh Alotaibi - Saad Thaar Alqahtani
       </div>
     </div>
   );
