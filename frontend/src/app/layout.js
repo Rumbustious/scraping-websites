@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Project Title",
+  title: "Store Scraper",
   description: "Search for products over online stores",
 };
 

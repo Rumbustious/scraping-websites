@@ -2,7 +2,7 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import json
-from scraper import JarirScraper, AmazonScraper
+from scraper import JarirScraper, AmazonScraper, NoonScraper
 import uvicorn
 import heapq
 
@@ -25,7 +25,8 @@ def generate_search_results(search_query):
     """Generator function that yields products as they're scraped"""
     scrapers = [
         (JarirScraper("Jarir"), "scrape_products", {"max_scrolls": 1}),
-        (AmazonScraper("Amazon"), "scrape_products", {"max_pages": 1})
+        (AmazonScraper("Amazon"), "scrape_products", {"max_pages": 1}),
+        (NoonScraper("Noon"), "scrape_products", {"max_pages": 1})  # Add NoonScraper
     ]
 
     results = []
@@ -46,16 +47,19 @@ def generate_search_results(search_query):
     # Sort results based on a criteria (e.g., rating, price)
     results.sort(key=lambda x: (x.get('rating', 0), x.get('price', float('inf'))), reverse=True)
 
-    # Interleave results from both stores
+    # Interleave results from all stores
     jarir_results = [r for r in results if r.get('store') == 'Jarir']
     amazon_results = [r for r in results if r.get('store') == 'Amazon']
+    noon_results = [r for r in results if r.get('store') == 'Noon']
     interleaved_results = []
 
-    while jarir_results or amazon_results:
+    while jarir_results or amazon_results or noon_results:
         if jarir_results:
             interleaved_results.append(jarir_results.pop(0))
         if amazon_results:
             interleaved_results.append(amazon_results.pop(0))
+        if noon_results:
+            interleaved_results.append(noon_results.pop(0))
 
     for product in interleaved_results:
         yield json.dumps(product) + "\n"

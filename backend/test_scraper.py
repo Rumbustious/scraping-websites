@@ -31,7 +31,7 @@ amazon_scraper = AmazonScraper("Amazon")
 
 # Start scraping Amazon
 print(f"Searching for: {search_term} on Amazon")
-amazon_products = list(amazon_scraper.scrape_products(search_term, max_pages=3))
+amazon_products = list(amazon_scraper.scrape_products(search_term, max_pages=1))
 
 # Print the results from Amazon
 for index, product in enumerate(amazon_products, start=1):

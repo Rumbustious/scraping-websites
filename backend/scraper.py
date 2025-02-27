@@ -420,24 +420,31 @@ class NoonScraper(StoreScraper):
                     
                     for product in product_elements:
                         try:
-                            # Locate the product title anchor
-                            title_anchor = product.select_one("a[id^='productBox']")
-                            if not title_anchor:
-                                continue  # Skip if no title anchor found
+                            # Locate the product title
+                            title_elem = product.select_one("div[data-qa='product-name']")
+                            if not title_elem:
+                                continue  # Skip if no title element found
                             
                             # Product title
-                            title = title_anchor.get("title", "").strip()
+                            title = title_elem.get("title", "").strip()
                             
                             # Product link
-                            link = f"https://www.noon.com{title_anchor['href']}"
+                            link_elem = product.select_one("a[id^='productBox']")
+                            link = f"https://www.noon.com{link_elem['href']}" if link_elem else "N/A"
                             
                             # Product price
                             price_elem = product.select_one("strong.amount.currencyImageAmount")
                             price = price_elem.get_text(strip=True) if price_elem else "N/A"
                             
                             # Product image
-                            image_elem = product.select_one("img.sc-d13a0e88-1.cindWc")
+                            image_elem = product.select_one("div.sc-d8caf424-2.fJBKzl img.sc-d13a0e88-1.cindWc")
                             image_url = image_elem["src"] if image_elem else ""
+                            
+                            # If multiple images are present, select the first one
+                            if not image_url:
+                                image_elems = product.select("div.sc-d8caf424-2.fJBKzl img.sc-d13a0e88-1.cindWc")
+                                if image_elems:
+                                    image_url = image_elems[0]["src"]
                             
                             # Product rating
                             rating_elem = product.select_one("div.sc-9cb63f72-2.dGLdNc")
