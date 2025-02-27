@@ -1,18 +1,18 @@
-from scraper import JarirScraper, AmazonScraper
-
-# Initialize the scraper
-scraper = JarirScraper("Jarir")
+from scraper import JarirScraper, AmazonScraper, NoonScraper
 
 # Choose a search term (Example: "laptop")
 search_term = "iphone 16"
 
-# Start scraping
-print(f"Searching for: {search_term}")
-products = list(scraper.scrape_products(search_term, max_scrolls=3))
+# Initialize the Jarir scraper
+jarir_scraper = JarirScraper("Jarir")
 
-# Print the results
-for index, product in enumerate(products, start=1):
-    print(f"\nProduct {index}:")
+# Start scraping Jarir
+print(f"Searching for: {search_term} on Jarir")
+jarir_products = list(jarir_scraper.scrape_products(search_term, max_scrolls=3))
+
+# Print the results from Jarir
+for index, product in enumerate(jarir_products, start=1):
+    print(f"\nJarir Product {index}:")
     print(f"Title: {product['title']}")
     print(f"Price: {product['price']} SAR")
     print(f"Info: {product['info']}")
@@ -20,18 +20,22 @@ for index, product in enumerate(products, start=1):
     print(f"Link: {product['link']}")
     print(f"Image URL: {product['image_url']}")
 
+# Quit the Jarir scraper
+jarir_scraper.quit_driver()
 
-print("\nFinished scraping jarir..")
-print("Start scrapping amazon..")
+print("\nFinished scraping Jarir..")
+print("Start scraping Amazon..")
 
-scraper = AmazonScraper("Amazon")
-# Start scraping
-print(f"Searching for: {search_term}")
-products = list(scraper.scrape_products(search_term, max_pages=3))
+# Initialize the Amazon scraper
+amazon_scraper = AmazonScraper("Amazon")
 
-# Print the results
-for index, product in enumerate(products, start=1):
-    print(f"\nProduct {index}:")
+# Start scraping Amazon
+print(f"Searching for: {search_term} on Amazon")
+amazon_products = list(amazon_scraper.scrape_products(search_term, max_pages=3))
+
+# Print the results from Amazon
+for index, product in enumerate(amazon_products, start=1):
+    print(f"\nAmazon Product {index}:")
     print(f"Title: {product['title']}")
     print(f"Price: {product['price']} SAR")
     print(f"Info: {product['info']}")
@@ -39,5 +43,28 @@ for index, product in enumerate(products, start=1):
     print(f"Link: {product['link']}")
     print(f"Image URL: {product['image_url']}")
 
-# Quit the browser session
-scraper.quit_driver()
+# Quit the Amazon scraper
+amazon_scraper.quit_driver()
+
+print("\nFinished scraping Amazon..")
+print("Start scraping Noon..")
+
+# Initialize the Noon scraper
+noon_scraper = NoonScraper("Noon")
+
+# Start scraping Noon
+print(f"Searching for: {search_term} on Noon")
+noon_products = list(noon_scraper.scrape_products(search_term, max_pages=3))
+
+# Print the results from Noon
+for index, product in enumerate(noon_products, start=1):
+    print(f"\nNoon Product {index}:")
+    print(f"Title: {product['title']}")
+    print(f"Price: {product['price']} SAR")
+    print(f"Info: {product['info']}")
+    print(f"Rating: {product['rating']}")
+    print(f"Link: {product['link']}")
+    print(f"Image URL: {product['image_url']}")
+
+# Quit the Noon scraper
+noon_scraper.quit_driver()
