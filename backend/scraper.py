@@ -619,6 +619,10 @@ class ExtraScraper(StoreScraper):
                             name_elem = product.select_one("div.right-container.svelte-1kvantt div.product-details.svelte-1kvantt section.product-name.svelte-1kvantt div.tile-name-container.svelte-tiqn05 div.product-name.svelte-tiqn05 span.product-name-data")
                             name = name_elem.get_text(strip=True) if name_elem else "N/A"
                             
+                            # Locate the product rating
+                            rating_elem = product.select_one("section.product-rating-review.svelte-1kvantt div.rating.svelte-vmxu3a")
+                            rating = rating_elem.get_text(strip=True) if rating_elem else "N/A"
+                            
                             # Deduplicate products
                             product_key = (link, image_url, name)
                             if product_key not in unique_products:
@@ -630,7 +634,7 @@ class ExtraScraper(StoreScraper):
                                     "title": name,
                                     "price": "N/A",  # Placeholder, will be updated later
                                     "info": "N/A",  # Placeholder, will be updated later
-                                    "rating": "N/A",  # Placeholder, will be updated later
+                                    "rating": rating,
                                 }
                         except Exception as e:
                             print(f"Error extracting product details: {e}. Skipping product...")
