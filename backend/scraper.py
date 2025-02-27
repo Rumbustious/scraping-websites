@@ -575,3 +575,128 @@ class NoonScraper(StoreScraper):
             return f"{normalized_price:.2f}"
         except Exception:
             return "N/A"
+        
+        
+class ExtraScraper(StoreScraper):
+    def scrape_products(self, search_value, max_pages=5):
+        """Scrape products from Extra for a given search value."""
+        encoded_search_value = urllib.parse.quote(search_value)
+        base_url = f"https://www.extra.com/en-sa/search/?q={encoded_search_value}%3Arelevance%3Atype%3APRODUCT&text={encoded_search_value}"
+
+        try:
+            for page in range(1, max_pages + 1):
+                url = f"{base_url}&pg={page}&pageSize=24&sort=relevance"
+                print(f"Loading page {page} for Extra - URL: {url}")
+                self.driver.get(url)
+
+                # Wait for the product list to load
+                WebDriverWait(self.driver, 20).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "section.product-list.product-list-section.svelte-97c3bg"))
+                )
+                print(f"Scraping results from {self.store_name} - Page {page} for: {search_value}")
+
+                unique_products = set()
+
+                def extract_products():
+                    """Extract product details using BeautifulSoup."""
+                    page_source = self.driver.page_source
+                    soup = BeautifulSoup(page_source, "html.parser")
+                    
+                    # Adjusted selector for product elements
+                    product_elements = soup.select("section.main-section.svelte-1kvantt")
+                    
+                    for product in product_elements:
+                        try:
+                            # Locate the product link
+                            link_elem = product.select_one("a.position-relative.product-tile-content-wrapper.svelte-1kvantt")
+                            link = f"https://www.extra.com{link_elem['href']}" if link_elem else "N/A"
+                            
+                            # Locate the product image
+                            image_elem = product.select_one("div.left-container.svelte-1kvantt section img.img-hover.svelte-1kx3rgh")
+                            image_url = image_elem["src"] if image_elem else ""
+                            
+                            # Locate the product name
+                            name_elem = product.select_one("div.right-container.svelte-1kvantt div.product-details.svelte-1kvantt section.product-name.svelte-1kvantt div.tile-name-container.svelte-tiqn05 div.product-name.svelte-tiqn05 span.product-name-data")
+                            name = name_elem.get_text(strip=True) if name_elem else "N/A"
+                            
+                            # Deduplicate products
+                            product_key = (link, image_url, name)
+                            if product_key not in unique_products:
+                                unique_products.add(product_key)
+                                yield {
+                                    "store": self.store_name,
+                                    "link": link,
+                                    "image_url": image_url,
+                                    "title": name,
+                                    "price": "N/A",  # Placeholder, will be updated later
+                                    "info": "N/A",  # Placeholder, will be updated later
+                                    "rating": "N/A",  # Placeholder, will be updated later
+                                }
+                        except Exception as e:
+                            print(f"Error extracting product details: {e}. Skipping product...")
+
+                yield from extract_products()
+
+                # Check for 'Next' button to paginate
+                try:
+                    next_button = self.driver.find_element(By.CSS_SELECTOR, "a.pagination-next")
+                    if not next_button.is_enabled():
+                        print("No more pages to load.")
+                        break
+                except NoSuchElementException:
+                    print("No 'Next' button found. Stopping pagination.")
+                    break
+
+        except (TimeoutException, WebDriverException) as e:
+            print(f"Error during scraping: {e}")
+
+    def scrape_availability(self, product_link):
+        """
+        Check availability and price of a product on Extra based on its link.
+        """
+        try:
+            self.driver.get(product_link)
+            soup = BeautifulSoup(self.driver.page_source, "html.parser")
+
+            # ----------- AVAILABILITY DETECTION -----------
+            availability = False
+
+            # Check for availability text
+            availability_container = soup.select_one("div.availability")
+            if availability_container:
+                availability_text = availability_container.get_text(strip=True).lower()
+                
+                # If we find "in stock" or "only x left" => available
+                if ("in stock" in availability_text) or ("only" in availability_text and "left" in availability_text):
+                    availability = True
+                
+                # If we see "currently unavailable", "out of stock", "temporarily out of stock" => not available
+                if ("unavailable" in availability_text) or ("out of stock" in availability_text):
+                    availability = False
+
+            # ----------- PRICE DETECTION -----------
+            # If not available => skip price
+            price = "N/A"
+            if availability:
+                # Attempt each known pattern:
+                price_elem = soup.select_one("span.price")
+                if price_elem and price_elem.text.strip():
+                    raw_price = price_elem.get_text(strip=True).replace("SAR", "").strip()
+                    price = self._extract_and_normalize_price(raw_price)
+
+            return {"availability": availability, "price": price}
+
+        except Exception as e:
+            print(f"[Extra] Error checking availability and price for {product_link}: {e}")
+            return {"availability": False, "price": "N/A"}
+
+    def _extract_and_normalize_price(self, raw_price):
+        # Helper to remove currency text (SAR, ر.س, etc.) and parse float
+        try:
+            raw_price = raw_price.replace("SAR", "").replace("ر.س", "")
+            # remove any extra characters
+            raw_price = re.sub(r"[^\d.]", "", raw_price)
+            normalized_price = float(raw_price)
+            return f"{normalized_price:.2f}"
+        except Exception:
+            return "N/A"

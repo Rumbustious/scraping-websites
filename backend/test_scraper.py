@@ -1,4 +1,4 @@
-from scraper import JarirScraper, AmazonScraper, NoonScraper
+from scraper import JarirScraper, AmazonScraper, NoonScraper, ExtraScraper
 
 # Choose a search term (Example: "laptop")
 search_term = "iphone 16"
@@ -68,3 +68,26 @@ for index, product in enumerate(noon_products, start=1):
 
 # Quit the Noon scraper
 noon_scraper.quit_driver()
+
+print("\nFinished scraping Noon..")
+print("Start scraping Extra..")
+
+# Initialize the Extra scraper
+extra_scraper = ExtraScraper("Extra")
+
+# Start scraping Extra
+print(f"Searching for: {search_term} on Extra")
+extra_products = list(extra_scraper.scrape_products(search_term, max_pages=3))
+
+# Print the results from Extra
+for index, product in enumerate(extra_products, start=1):
+    print(f"\nExtra Product {index}:")
+    print(f"Title: {product['title']}")
+    print(f"Price: {product['price']} SAR")
+    print(f"Info: {product['info']}")
+    print(f"Rating: {product['rating']}")
+    print(f"Link: {product['link']}")
+    print(f"Image URL: {product['image_url']}")
+
+# Quit the Extra scraper
+extra_scraper.quit_driver()
