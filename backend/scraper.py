@@ -623,6 +623,15 @@ class ExtraScraper(StoreScraper):
                             rating_elem = product.select_one("section.product-rating-review.svelte-1kvantt div.rating.svelte-vmxu3a")
                             rating = rating_elem.get_text(strip=True) if rating_elem else "N/A"
                             
+                            # Locate the product prices
+                            standard_price_elem = product.select_one("section.product-price-new-container.test.jood-NOPRIME.user-NOPRIME.variant-plp-list.svelte-8gstqg section.middle.svelte-8gstqg section.price.svelte-8gstqg span.price strong")
+                            standard_price = standard_price_elem.get_text(strip=True) if standard_price_elem else "N/A"
+                            
+                            
+                            # Locate the product info
+                            info_elems = product.select("section.product-stats-container.svelte-1kvantt ul.product-stats.svelte-hoio38 li.svelte-hoio38")
+                            info = " | ".join([elem.get_text(strip=True) for elem in info_elems]) if info_elems else "N/A"
+                            
                             # Deduplicate products
                             product_key = (link, image_url, name)
                             if product_key not in unique_products:
@@ -632,8 +641,8 @@ class ExtraScraper(StoreScraper):
                                     "link": link,
                                     "image_url": image_url,
                                     "title": name,
-                                    "price": "N/A",  # Placeholder, will be updated later
-                                    "info": "N/A",  # Placeholder, will be updated later
+                                    "price": standard_price,
+                                    "info": info,
                                     "rating": rating,
                                 }
                         except Exception as e:
