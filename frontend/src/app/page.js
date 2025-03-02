@@ -85,7 +85,6 @@ const Sidebar = ({
             <option value="">All Stores</option>
             <option value="Jarir">Jarir</option>
             <option value="Amazon">Amazon</option>
-            <option value="Noon">Noon</option>
             <option value="Extra">Extra</option>
             <option value="Carrefour">Carrefour</option>
           </select>
@@ -276,8 +275,6 @@ export default function Home() {
                         ? "/jarir.svg"
                         : product.store === "Amazon"
                         ? "/Amazon_logo.svg"
-                        : product.store === "Noon"
-                        ? "/noon.png"
                         : product.store === "Extra"
                         ? "/extra-logo.svg"
                         : "/carrefour.png"
@@ -286,11 +283,7 @@ export default function Home() {
                     className="store-logo w-12 h-12 mb-4"
                   />
                   <img
-                    src={
-                      product.store === "Noon"
-                        ? "/dummy-image.png"
-                        : product.image_url
-                    }
+                    src={product.image_url}
                     alt={product.title}
                     className="mb-4 mx-auto"
                   />

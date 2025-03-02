@@ -74,7 +74,6 @@ class StoreScraper:
         except (ValueError, IndexError):
             return "N/A"
 
-
 class JarirScraper(StoreScraper):
     def handle_popups(self):
         """Handle popups for language selection and cookie consent."""
@@ -104,7 +103,7 @@ class JarirScraper(StoreScraper):
             self.handle_popups()
 
             WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "product-tile__item--spacer"))
+                EC.presence_of_element_located((By.CLASS_NAME, "product-listing"))
             )
             print(f"Scraping results from {self.store_name} for: {search_value}")
 
@@ -113,7 +112,7 @@ class JarirScraper(StoreScraper):
             def extract_products():
                 """Extract product details using BeautifulSoup."""
                 soup = BeautifulSoup(self.driver.page_source, "html.parser")
-                product_elements = soup.find_all("div", class_="product-tile__item--spacer")
+                product_elements = soup.select("div.product-listing div.product-tile__item--spacer div.product-tile div.product-tile__item")
 
                 if not product_elements:
                     print("No product tiles found. The page structure might have changed.")
@@ -121,26 +120,21 @@ class JarirScraper(StoreScraper):
                 for product in product_elements:
                     try:
                         # Extract title and link
-                        title_elem = product.find("p", class_="product-title__title")
+                        title_elem = product.select_one("div.product-tile__col div.product-title p.product-title__title")
                         link_elem = product.find("a", class_="product-tile__link")
                         
                         # Extract rating stars
                         rating = product.find("div", class_="rating-star")
                         rating = rating.get_text(strip=True) if rating else "N/A"
 
-
                         # Extract price
-                        price_elem = product.find("div", class_="price")
+                        price_elem = product.select_one("div.product-tile__price-container div.product-tile__price div.price-box__row div.price span.price_alignment span:nth-child(2)")
                         raw_price = price_elem.get_text(strip=True) if price_elem else "N/A"
                         price = self.normalize_price(raw_price)
 
                         # Extract info
-                        info_elem = product.find("p", class_="product-title__info")
-                        info = (
-                            info_elem.get_text(" | ", strip=True)
-                            if info_elem
-                            else "No additional info available"
-                        )
+                        info_elem = product.select("div.product-tile__col div.product-title p.product-title__info span.product-title__info--box")
+                        info = " | ".join([elem.get_text(strip=True) for elem in info_elem]) if info_elem else "No additional info available"
 
                         # Extract image
                         image_elem = product.find("img", {"loading": "eager", "class": "image--contain"})
@@ -202,7 +196,6 @@ class JarirScraper(StoreScraper):
         except Exception as e:
             print(f"[{self.store_name}] Error checking availability and price for {product_link}: {e}")
             return {"availability": False, "price": "N/A"}
-
 
 class AmazonScraper(StoreScraper):
     def scrape_products(self, search_value, max_pages=5):
@@ -389,182 +382,7 @@ class AmazonScraper(StoreScraper):
             return f"{normalized_price:.2f}"
         except Exception:
             return "N/A"
-        
-class NoonScraper(StoreScraper):
-    def scrape_products(self, search_value, max_pages=5):
-        """Scrape products from Noon for a given search value."""
-        encoded_search_value = urllib.parse.quote(search_value)
-        base_url = f"https://www.noon.com/saudi-en/search/?q={encoded_search_value}"
-
-        try:
-            for page in range(1, max_pages + 1):
-                url = f"{base_url}&page={page}"
-                print(f"Loading page {page} for Noon - URL: {url}")
-                self.driver.get(url)
-
-                # Wait for the product list to load
-                WebDriverWait(self.driver, 20).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "div.sc-57fe1f38-0.eSrvHE"))
-                )
-                print(f"Scraping results from {self.store_name} - Page {page} for: {search_value}")
-
-                unique_products = set()
-
-                def extract_products():
-                    """Extract product details using BeautifulSoup."""
-                    page_source = self.driver.page_source
-                    soup = BeautifulSoup(page_source, "html.parser")
-                    
-                    # Adjusted selector for product elements
-                    product_elements = soup.select("div.sc-57fe1f38-0.eSrvHE")
-                    
-                    for product in product_elements:
-                        try:
-                            # Locate the product title
-                            title_elem = product.select_one("div[data-qa='product-name']")
-                            if not title_elem:
-                                continue  # Skip if no title element found
-                            
-                            # Product title
-                            title = title_elem.get("title", "").strip()
-                            
-                            # Product link
-                            link_elem = product.select_one("a[id^='productBox']")
-                            link = f"https://www.noon.com{link_elem['href']}" if link_elem else "N/A"
-                            
-                            # Product price
-                            price_elem = product.select_one("strong.amount.currencyImageAmount")
-                            price = price_elem.get_text(strip=True) if price_elem else "N/A"
-                            
-                            # Product image (second image)
-                            image_container = product.select_one("div.sc-47ce7046-2.uMZsC")
-                            if image_container:
-                                image_divs = image_container.select("div.sc-47ce7046-3.jvmCaf")
-                                if len(image_divs) > 1:
-                                    image_elem = image_divs[1].select_one("img.sc-d13a0e88-1.cindWc")
-                                    image_url = image_elem["src"] if image_elem else ""
-                                else:
-                                    image_url = ""
-                            else:
-                                image_url = ""
-                            
-                            # Product rating
-                            rating_elem = product.select_one("div.sc-9cb63f72-2.dGLdNc")
-                            rating = rating_elem.get_text(strip=True) if rating_elem else "N/A"
-
-                            # Deduplicate products
-                            product_key = (title, link)
-                            if product_key not in unique_products:
-                                unique_products.add(product_key)
-                                yield {
-                                    "store": self.store_name,
-                                    "title": title,
-                                    "link": link,
-                                    "price": price,
-                                    "info": "N/A",
-                                    "image_url": image_url,
-                                    "rating": rating,
-                                }
-                        except Exception as e:
-                            print(f"Error extracting product details: {e}. Skipping product...")
-
-                yield from extract_products()
-
-                # Check for 'Next' button to paginate
-                try:
-                    next_button = self.driver.find_element(By.CSS_SELECTOR, "a.s-pagination-next")
-                    if not next_button.is_enabled():
-                        print("No more pages to load.")
-                        break
-                except NoSuchElementException:
-                    print("No 'Next' button found. Stopping pagination.")
-                    break
-
-        except (TimeoutException, WebDriverException) as e:
-            print(f"Error during scraping: {e}")
-
-    def scrape_availability(self, product_link):
-        """
-        Check availability and price of a product on Noon based on its link.
-        1) If #add-to-cart-button is present => consider available
-        2) Otherwise parse #availability or #availabilityInsideBuyBox_feature_div for text.
-        3) Extract price from multiple possible selectors (apexPriceToPay, a-price-whole + a-price-fraction, etc.)
-        """
-        try:
-            self.driver.get(product_link)
-            soup = BeautifulSoup(self.driver.page_source, "html.parser")
-
-            # ----------- AVAILABILITY DETECTION -----------
-            availability = False
-
-            # 1) If #add-to-cart-button is present => consider it available
-            add_to_cart_button = soup.select_one("#add-to-cart-button")
-            if add_to_cart_button:
-                availability = True
-
-            # 2) If not found, parse text in #availability and #availabilityInsideBuyBox_feature_div
-            #    Check for phrases like "In Stock", "Only X left", "Currently unavailable", etc.
-            availability_container = soup.select_one("#availability") or soup.select_one("#availabilityInsideBuyBox_feature_div")
-            if availability_container:
-                availability_text = availability_container.get_text(strip=True).lower()
-                
-                # If we find "in stock" or "only x left" => available
-                if ("in stock" in availability_text) or ("only" in availability_text and "left" in availability_text):
-                    availability = True
-                
-                # If we see "currently unavailable", "out of stock", "temporarily out of stock" => not available
-                if ("unavailable" in availability_text) or ("out of stock" in availability_text):
-                    availability = False
-
-            # ----------- PRICE DETECTION -----------
-            # If not available => skip price
-            price = "N/A"
-            if availability:
-                # Attempt each known pattern:
-                # 1) apexPriceToPay
-                apex_elem = soup.select_one("span.a-price.a-text-price.a-size-medium.apexPriceToPay span.a-offscreen")
-                if apex_elem and apex_elem.text.strip():
-                    raw_price = apex_elem.get_text(strip=True)
-                    price = self._extract_and_normalize_price(raw_price)
-
-                if price == "N/A":
-                    # 2) a-price-whole + a-price-fraction
-                    whole_elem = soup.select_one("span.a-price-whole")
-                    fraction_elem = soup.select_one("span.a-price-fraction")
-                    if whole_elem and fraction_elem:
-                        combined_price = whole_elem.get_text(strip=True).replace(",", "")
-                        frac = fraction_elem.get_text(strip=True)
-                        # remove any trailing '.' in the whole_elem text
-                        if combined_price.endswith("."):
-                            combined_price = combined_price[:-1]
-                        raw_price = f"{combined_price}.{frac}"
-                        price = self._extract_and_normalize_price(raw_price)
-
-                if price == "N/A":
-                    # 3) fallback: .aok-offscreen or #price_inside_buybox
-                    fallback_elem = soup.select_one("div.a-section.aok-relative span.aok-offscreen")
-                    if not fallback_elem:
-                        fallback_elem = soup.select_one("#price_inside_buybox")
-                    if fallback_elem and fallback_elem.text.strip():
-                        raw_price = fallback_elem.get_text(strip=True)
-                        price = self._extract_and_normalize_price(raw_price)
-
-            return {"availability": availability, "price": price}
-
-        except Exception as e:
-            print(f"[Noon] Error checking availability and price for {product_link}: {e}")
-            return {"availability": False, "price": "N/A"}
-
-    def _extract_and_normalize_price(self, raw_price):
-        # Helper to remove currency text (SAR, ر.س, etc.) and parse float
-        try:
-            raw_price = raw_price.replace("SAR", "").replace("ر.س", "")
-            # remove any extra characters
-            raw_price = re.sub(r"[^\d.]", "", raw_price)
-            normalized_price = float(raw_price)
-            return f"{normalized_price:.2f}"
-        except Exception:
-            return "N/A"       
+            
         
 class ExtraScraper(StoreScraper):
     def scrape_products(self, search_value, max_pages=5):
@@ -742,7 +560,9 @@ class CarrefourScraper(StoreScraper):
                                 name = name_elem.get_text(strip=True) if name_elem else "N/A"
                                 
                                 # Locate the product price
-                                price_elem = product.select_one("div[data-testid='product_price'] div[data-testid='product-card-original-price'] div.css-14zpref")
+                                price_elem = product.select_one("div[data-testid='product-card-discount-price'] div.css-14zpref")
+                                if not price_elem:
+                                    price_elem = product.select_one("div[data-testid='product-card-original-price'] div.css-14zpref")
                                 price = price_elem.get_text(strip=True) if price_elem else "N/A"
                                 
                                 # Locate the product link
