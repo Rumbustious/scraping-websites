@@ -2,7 +2,7 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import json
-from scraper import JarirScraper, AmazonScraper, NoonScraper, ExtraScraper
+from scraper import JarirScraper, AmazonScraper, NoonScraper, ExtraScraper, CarrefourScraper
 import uvicorn
 import heapq
 
@@ -27,7 +27,8 @@ def generate_search_results(search_query):
         (JarirScraper("Jarir"), "scrape_products", {"max_scrolls": 1}),
         (AmazonScraper("Amazon"), "scrape_products", {"max_pages": 1}),
         (NoonScraper("Noon"), "scrape_products", {"max_pages": 1}),
-        (ExtraScraper("Extra"), "scrape_products", {"max_pages": 1})  # Add ExtraScraper
+        (ExtraScraper("Extra"), "scrape_products", {"max_pages": 1}),
+        (CarrefourScraper("Carrefour"), "scrape_products", {"max_pages": 1})  # Add CarrefourScraper
     ]
 
     results = []
@@ -53,9 +54,10 @@ def generate_search_results(search_query):
     amazon_results = [r for r in results if r.get('store') == 'Amazon']
     noon_results = [r for r in results if r.get('store') == 'Noon']
     extra_results = [r for r in results if r.get('store') == 'Extra']
+    carrefour_results = [r for r in results if r.get('store') == 'Carrefour']
     interleaved_results = []
 
-    while jarir_results or amazon_results or noon_results or extra_results:
+    while jarir_results or amazon_results or noon_results or extra_results or carrefour_results:
         if jarir_results:
             interleaved_results.append(jarir_results.pop(0))
         if amazon_results:
@@ -64,6 +66,8 @@ def generate_search_results(search_query):
             interleaved_results.append(noon_results.pop(0))
         if extra_results:
             interleaved_results.append(extra_results.pop(0))
+        if carrefour_results:
+            interleaved_results.append(carrefour_results.pop(0))
 
     for product in interleaved_results:
         yield json.dumps(product) + "\n"

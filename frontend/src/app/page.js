@@ -87,6 +87,7 @@ const Sidebar = ({
             <option value="Amazon">Amazon</option>
             <option value="Noon">Noon</option>
             <option value="Extra">Extra</option>
+            <option value="Carrefour">Carrefour</option>
           </select>
         </div>
         <div className="mb-4">
@@ -277,7 +278,9 @@ export default function Home() {
                         ? "/Amazon_logo.svg"
                         : product.store === "Noon"
                         ? "/noon.png"
-                        : "/extra-logo.svg"
+                        : product.store === "Extra"
+                        ? "/extra-logo.svg"
+                        : "/carrefour.png"
                     }
                     alt={`${product.store} Logo`}
                     className="store-logo w-12 h-12 mb-4"

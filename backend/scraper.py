@@ -436,15 +436,17 @@ class NoonScraper(StoreScraper):
                             price_elem = product.select_one("strong.amount.currencyImageAmount")
                             price = price_elem.get_text(strip=True) if price_elem else "N/A"
                             
-                            # Product image
-                            image_elem = product.select_one("div.sc-d8caf424-2.fJBKzl img.sc-d13a0e88-1.cindWc")
-                            image_url = image_elem["src"] if image_elem else ""
-                            
-                            # If multiple images are present, select the first one
-                            if not image_url:
-                                image_elems = product.select("div.sc-d8caf424-2.fJBKzl img.sc-d13a0e88-1.cindWc")
-                                if image_elems:
-                                    image_url = image_elems[0]["src"]
+                            # Product image (second image)
+                            image_container = product.select_one("div.sc-47ce7046-2.uMZsC")
+                            if image_container:
+                                image_divs = image_container.select("div.sc-47ce7046-3.jvmCaf")
+                                if len(image_divs) > 1:
+                                    image_elem = image_divs[1].select_one("img.sc-d13a0e88-1.cindWc")
+                                    image_url = image_elem["src"] if image_elem else ""
+                                else:
+                                    image_url = ""
+                            else:
+                                image_url = ""
                             
                             # Product rating
                             rating_elem = product.select_one("div.sc-9cb63f72-2.dGLdNc")
@@ -481,18 +483,6 @@ class NoonScraper(StoreScraper):
         except (TimeoutException, WebDriverException) as e:
             print(f"Error during scraping: {e}")
 
-    def scrape_arabic(self, url):
-        self.driver.get(url)
-        try:
-            title_element = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "span#productTitle"))
-            )
-            title = title_element.text.strip()
-            return {"store": self.store_name, "title_arabic": title}
-        except Exception as e:
-            print(f"[Noon] Error fetching Arabic title: {e}")
-            return None
-    
     def scrape_availability(self, product_link):
         """
         Check availability and price of a product on Noon based on its link.
@@ -574,8 +564,7 @@ class NoonScraper(StoreScraper):
             normalized_price = float(raw_price)
             return f"{normalized_price:.2f}"
         except Exception:
-            return "N/A"
-        
+            return "N/A"       
         
 class ExtraScraper(StoreScraper):
     def scrape_products(self, search_value, max_pages=5):
@@ -701,6 +690,138 @@ class ExtraScraper(StoreScraper):
 
         except Exception as e:
             print(f"[Extra] Error checking availability and price for {product_link}: {e}")
+            return {"availability": False, "price": "N/A"}
+
+    def _extract_and_normalize_price(self, raw_price):
+        # Helper to remove currency text (SAR, ر.س, etc.) and parse float
+        try:
+            raw_price = raw_price.replace("SAR", "").replace("ر.س", "")
+            # remove any extra characters
+            raw_price = re.sub(r"[^\d.]", "", raw_price)
+            normalized_price = float(raw_price)
+            return f"{normalized_price:.2f}"
+        except Exception:
+            return "N/A"
+        
+
+class CarrefourScraper(StoreScraper):
+    def scrape_products(self, search_value, max_pages=5):
+        """Scrape products from Carrefour for a given search value."""
+        encoded_search_value = urllib.parse.quote(search_value)
+        base_url = f"https://www.carrefourksa.com/mafsau/en/v4/search?keyword={encoded_search_value}"
+
+        try:
+            for page in range(1, max_pages + 1):
+                url = f"{base_url}&page={page}"
+                print(f"Loading page {page} for Carrefour - URL: {url}")
+                self.driver.get(url)
+
+                # Wait for the product list to load
+                WebDriverWait(self.driver, 20).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "div.css-lzsise"))
+                )
+                print(f"Scraping results from {self.store_name} - Page {page} for: {search_value}")
+
+                unique_products = set()
+
+                def extract_products():
+                    """Extract product details using BeautifulSoup."""
+                    page_source = self.driver.page_source
+                    soup = BeautifulSoup(page_source, "html.parser")
+                    
+                    # Adjusted selector for product elements
+                    product_rows = soup.select("div.css-lzsise div.css-5kig18")
+                    
+                    for row in product_rows:
+                        product_elements = row.select("div.css-l3rx45 div.css-fv9do8 div.css-b9nx4o div > ul > div.css-yqd9tx")
+                        
+                        for product in product_elements:
+                            try:
+                                # Locate the product name
+                                name_elem = product.select_one("div.css-11qbfb a[data-testid='product_name']")
+                                name = name_elem.get_text(strip=True) if name_elem else "N/A"
+                                
+                                # Locate the product price
+                                price_elem = product.select_one("div[data-testid='product_price'] div[data-testid='product-card-original-price'] div.css-14zpref")
+                                price = price_elem.get_text(strip=True) if price_elem else "N/A"
+                                
+                                # Locate the product link
+                                link_elem = product.select_one("div.css-11qbfb a[data-testid='product_name']")
+                                link = f"https://www.carrefourksa.com{link_elem['href']}" if link_elem else "N/A"
+                                
+                                # Locate the product image
+                                image_elem = product.select_one("div[data-testid='product_card_image_container'] img[data-testid='product_image_main']")
+                                image_url = image_elem["src"] if image_elem else "N/A"
+                                
+                                # Deduplicate products
+                                product_key = (name, price, link)
+                                if product_key not in unique_products:
+                                    unique_products.add(product_key)
+                                    yield {
+                                        "store": self.store_name,
+                                        "title": name,
+                                        "link": link,
+                                        "price": price,
+                                        "info": "N/A",
+                                        "image_url": image_url,
+                                        "rating": "N/A",
+                                    }
+                            except Exception as e:
+                                print(f"Error extracting product details: {e}. Skipping product...")
+
+                yield from extract_products()
+
+                # Check for 'Next' button to paginate
+                try:
+                    next_button = self.driver.find_element(By.CSS_SELECTOR, "a.pagination-next")
+                    if not next_button.is_enabled():
+                        print("No more pages to load.")
+                        break
+                except NoSuchElementException:
+                    print("No 'Next' button found. Stopping pagination.")
+                    break
+
+        except (TimeoutException, WebDriverException) as e:
+            print(f"Error during scraping: {e}")
+
+    def scrape_availability(self, product_link):
+        """
+        Check availability and price of a product on Carrefour based on its link.
+        """
+        try:
+            self.driver.get(product_link)
+            soup = BeautifulSoup(self.driver.page_source, "html.parser")
+
+            # ----------- AVAILABILITY DETECTION -----------
+            availability = False
+
+            # Check for availability text
+            availability_container = soup.select_one("div.availability")
+            if availability_container:
+                availability_text = availability_container.get_text(strip=True).lower()
+                
+                # If we find "in stock" or "only x left" => available
+                if ("in stock" in availability_text) or ("only" in availability_text and "left" in availability_text):
+                    availability = True
+                
+                # If we see "currently unavailable", "out of stock", "temporarily out of stock" => not available
+                if ("unavailable" in availability_text) or ("out of stock" in availability_text):
+                    availability = False
+
+            # ----------- PRICE DETECTION -----------
+            # If not available => skip price
+            price = "N/A"
+            if availability:
+                # Attempt each known pattern:
+                price_elem = soup.select_one("span.price")
+                if price_elem and price_elem.text.strip():
+                    raw_price = price_elem.get_text(strip=True).replace("SAR", "").strip()
+                    price = self._extract_and_normalize_price(raw_price)
+
+            return {"availability": availability, "price": price}
+
+        except Exception as e:
+            print(f"[Carrefour] Error checking availability and price for {product_link}: {e}")
             return {"availability": False, "price": "N/A"}
 
     def _extract_and_normalize_price(self, raw_price):
