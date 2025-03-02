@@ -35,7 +35,6 @@ class StoreScraper:
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edg/109.0.0.0 Safari/537.36"
         )
         
-
         # Initialize Edge WebDriver (Ensure `msedgedriver` is in PATH)
         service = EdgeService()
         driver = webdriver.Edge(service=service, options=options)
@@ -129,6 +128,8 @@ class JarirScraper(StoreScraper):
 
                         # Extract price
                         price_elem = product.select_one("div.product-tile__price-container div.product-tile__price div.price-box__row div.price span.price_alignment span:nth-child(2)")
+                        if not price_elem:
+                            price_elem = product.select_one("div.product-tile__price-container div.product-tile__price div.price-box__row div.price span.price_alignment span")
                         raw_price = price_elem.get_text(strip=True) if price_elem else "N/A"
                         price = self.normalize_price(raw_price)
 
@@ -189,7 +190,8 @@ class JarirScraper(StoreScraper):
 
             # Extract the price
             price_element = soup.select_one("div.price-box__row div.price span.price__currency + span")
-            price = self.normalize_price(price_element.get_text(strip=True) if price_element else "")
+            raw_price = price_element.get_text(strip=True) if price_element else ""
+            price = self.normalize_price(raw_price)
 
             return {"availability": availability, "price": price}
 
