@@ -93,7 +93,90 @@ class JarirScraper(StoreScraper):
         except TimeoutException:
             print("Cookie consent popup did not appear or was already handled.")
 
-    
+    def scrape_products(self, search_value, max_scrolls=5):
+        """Scrape products from the Jarir website."""
+        encoded_search_value = urllib.parse.quote(search_value)
+        url = f"https://www.jarir.com/sa-en/catalogsearch/result?search={encoded_search_value}&country=sa"
+
+        try:
+            self.driver.get(url)
+            self.handle_popups()
+
+            WebDriverWait(self.driver, 20).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "product-listing"))
+            )
+            print(f"Scraping results from {self.store_name} for: {search_value}")
+
+            unique_products = set()
+
+            def extract_products():
+                """Extract product details using BeautifulSoup."""
+                soup = BeautifulSoup(self.driver.page_source, "html.parser")
+                product_elements = soup.select("div.product-listing div.product-tile__item--spacer div.product-tile div.product-tile__item")
+
+                if not product_elements:
+                    print("No product tiles found. The page structure might have changed.")
+
+                for product in product_elements:
+                    try:
+                        # Extract title and link
+                        title_elem = product.select_one("div.product-tile__col div.product-title p.product-title__title")
+                        link_elem = product.find("a", class_="product-tile__link")
+                        
+                        # Extract rating stars
+                        rating = product.find("div", class_="rating-star")
+                        rating = rating.get_text(strip=True) if rating else "N/A"
+
+                        # Extract price
+                        price_elem = product.select_one("div.product-tile__price-container div.product-tile__price div.price-box__row div.price span.price_alignment span:nth-child(2)")
+                        if not price_elem:
+                            price_elem = product.select_one("div.product-tile__price-container div.product-tile__price div.price-box__row div.price span.price_alignment span")
+                        raw_price = price_elem.get_text(strip=True) if price_elem else "N/A"
+                        price = self.normalize_price(raw_price)
+
+                        # Extract info
+                        info_elem = product.select("div.product-tile__col div.product-title p.product-title__info span.product-title__info--box")
+                        info = " | ".join([elem.get_text(strip=True) for elem in info_elem]) if info_elem else "No additional info available"
+
+                        # Extract image
+                        image_elem = product.select_one("div.lazyload-wrapper img.image--contain:not([src*='placeholder.png'])")
+                        image_url = self.clean_image_url(image_elem["src"]) if image_elem else ""
+
+                        # Format the product link
+                        title = title_elem.get_text(strip=True) if title_elem else "No title"
+                        link = f"https://www.jarir.com{link_elem['href']}" if link_elem else "No link"
+
+                        product_key = (title, link)
+                        if product_key not in unique_products:
+                            unique_products.add(product_key)
+                            yield {
+                                "store": self.store_name,
+                                "title": title,
+                                "link": link,
+                                "price": price,
+                                "info": info,
+                                "image_url": image_url,
+                                "rating": rating,
+                            }
+                    except AttributeError as e:
+                        print(f"Error extracting product details: {e}. Skipping product...")
+
+            yield from extract_products()
+
+            # Implement scrolling for dynamic content loading
+            last_height = self.driver.execute_script("return document.body.scrollHeight")
+            for _ in range(max_scrolls):
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                sleep(3)
+                yield from extract_products()
+                new_height = self.driver.execute_script("return document.body.scrollHeight")
+                if new_height == last_height:
+                    print("No more products to load.")
+                    break
+                last_height = new_height
+
+        except (TimeoutException, WebDriverException) as e:
+            print(f"Error during scraping: {e}")
 
     def scrape_availability(self, product_link):
         """Check product availability and price."""
@@ -108,7 +191,8 @@ class JarirScraper(StoreScraper):
 
             # Extract the price
             price_element = soup.select_one("div.price-box__row div.price span.price__currency + span")
-            price = self.normalize_price(price_element.get_text(strip=True) if price_element else "")
+            raw_price = price_element.get_text(strip=True) if price_element else ""
+            price = self.normalize_price(raw_price)
 
             return {"availability": availability, "price": price}
 
