@@ -10,33 +10,7 @@ import "rc-slider/assets/index.css";
 import Navbar from "./Navbar"; // Import the Navbar component
 
 async function processStream(reader, setProducts, setError) {
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-
-    // Process complete lines
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || ""; // Save incomplete line for next chunk
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      try {
-        const product = JSON.parse(line);
-        if (product.error) {
-          setError(product.error);
-        } else {
-          setProducts((prev) => [...prev, product]);
-        }
-      } catch (e) {
-        console.error("Error parsing JSON:", e);
-      }
-    }
-  }
+  /*...*/
 }
 
 const Sidebar = ({
@@ -147,6 +121,8 @@ export default function Home() {
   const [minRating, setMinRating] = useState("");
   const [maxProductPrice, setMaxProductPrice] = useState(1000);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showHero, setShowHero] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     if (products.length > 0) {
@@ -158,11 +134,19 @@ export default function Home() {
     }
   }, [products]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prevSlide) => (prevSlide + 1) % 3);
+    }, 3000); // Change slide every 3 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
     setLoading(true);
     setError(null);
     setProducts([]); // Clear previous results
+    setShowHero(false); // Hide hero section
 
     try {
       const response = await fetch(
@@ -252,6 +236,42 @@ export default function Home() {
               <FaFilter />
             </button>
           </div>
+          {showHero && (
+            <div className="hero-section relative">
+              <div className="slides">
+                <div
+                  className={`slide ${
+                    currentSlide === 0 ? "block" : "hidden"
+                  } text-center`}
+                >
+                  <h2 className="text-4xl font-bold">Team Member</h2>
+                  <p className="text-4xl">Abdullah Faleh Alotaibi</p>
+                </div>
+                <div
+                  className={`slide ${
+                    currentSlide === 1 ? "block" : "hidden"
+                  } text-center`}
+                >
+                  <h2 className="text-4xl font-bold">Team Member</h2>
+                  <p className="text-4xl">Saad Thaar Alqahtani</p>
+                </div>
+                <div
+                  className={`slide ${
+                    currentSlide === 2 ? "block" : "hidden"
+                  } text-center`}
+                >
+                  <img
+                    src="/logo.jpg"
+                    alt="Logo"
+                    className="mx-auto"
+                    width={600}
+                    height={40}
+                  />
+                </div>
+              </div>
+             
+            </div>
+          )}
           {loading && (
             <div className="product-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Array.from({ length: 10 }).map((_, index) => (
@@ -328,9 +348,6 @@ export default function Home() {
             </div>
           )}
         </div>
-      </div>
-      <div className="fixed bottom-0 left-0 w-full bg-gray-800 text-white text-center p-4">
-        Team members: Abdullah Faleh Alotaibi - Saad Thaar Alqahtani
       </div>
     </div>
   );
