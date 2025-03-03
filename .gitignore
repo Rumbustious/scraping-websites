@@ -1,3 +1,3 @@
 # ignore python cache files
-
+node_modules/
 __pycache__/

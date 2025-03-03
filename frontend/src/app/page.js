@@ -242,7 +242,7 @@ export default function Home() {
                 <div
                   className={`slide ${
                     currentSlide === 0 ? "block" : "hidden"
-                  } text-center`}
+                  } text-center mt-24`}
                 >
                   <h2 className="text-4xl font-bold">Team Member</h2>
                   <p className="text-4xl">Abdullah Faleh Alotaibi</p>
@@ -250,7 +250,7 @@ export default function Home() {
                 <div
                   className={`slide ${
                     currentSlide === 1 ? "block" : "hidden"
-                  } text-center`}
+                  } text-center mt-24`}
                 >
                   <h2 className="text-4xl font-bold">Team Member</h2>
                   <p className="text-4xl">Saad Thaar Alqahtani</p>
