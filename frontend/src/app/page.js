@@ -4,13 +4,39 @@ import axios from "axios";
 import Link from "next/link";
 import "./App.css";
 import Skeleton from "./Skeleton";
-import { FaStar, FaFilter } from "react-icons/fa";
+import { FaStar, FaFilter, FaUser } from "react-icons/fa";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 import Navbar from "./Navbar"; // Import the Navbar component
 
 async function processStream(reader, setProducts, setError) {
-  /*...*/
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    // Process complete lines
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || ""; // Save incomplete line for next chunk
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const product = JSON.parse(line);
+        if (product.error) {
+          setError(product.error);
+        } else {
+          setProducts((prev) => [...prev, product]);
+        }
+      } catch (e) {
+        console.error("Error parsing JSON:", e);
+      }
+    }
+  }
 }
 
 const Sidebar = ({
@@ -136,8 +162,8 @@ export default function Home() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prevSlide) => (prevSlide + 1) % 3);
-    }, 3000); // Change slide every 3 seconds
+      setCurrentSlide((prevSlide) => (prevSlide + 1) % 2); // Update to 2 slides
+    }, 5000); // Change slide every 5 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -237,39 +263,27 @@ export default function Home() {
             </button>
           </div>
           {showHero && (
-            <div className="hero-section relative">
-              <div className="slides">
+            <div className="hero-section relative mt-8">
+              <div className="slides transition-opacity duration-1000 ease-in-out">
                 <div
                   className={`slide ${
-                    currentSlide === 0 ? "block" : "hidden"
-                  } text-center mt-24`}
-                >
-                  <h2 className="text-4xl font-bold">Team Member</h2>
-                  <p className="text-4xl">Abdullah Faleh Alotaibi</p>
-                </div>
-                <div
-                  className={`slide ${
-                    currentSlide === 1 ? "block" : "hidden"
-                  } text-center mt-24`}
-                >
-                  <h2 className="text-4xl font-bold">Team Member</h2>
-                  <p className="text-4xl">Saad Thaar Alqahtani</p>
-                </div>
-                <div
-                  className={`slide ${
-                    currentSlide === 2 ? "block" : "hidden"
+                    currentSlide === 0 ? "block opacity-100" : "hidden opacity-0"
                   } text-center`}
                 >
-                  <img
-                    src="/logo.jpg"
-                    alt="Logo"
-                    className="mx-auto"
-                    width={600}
-                    height={40}
-                  />
+                  <FaUser className="text-6xl mx-auto mb-4 text-green-500" />
+                  <h2 className="text-4xl font-bold">Team Member</h2>
+                  <p className="text-4xl ">Abdullah Faleh Alotaibi</p>
+                </div>
+                <div
+                  className={`slide ${
+                    currentSlide === 1 ? "block opacity-100" : "hidden opacity-0"
+                  } text-center`}
+                >
+                  <FaUser className="text-6xl mx-auto mb-4 text-green-700"/>
+                  <h2 className="text-4xl font-bold">Team Member</h2>
+                  <p className="text-4xl ">Saad Thaar Alqahtani</p>
                 </div>
               </div>
-             
             </div>
           )}
           {loading && (
