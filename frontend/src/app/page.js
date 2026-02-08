@@ -272,7 +272,7 @@ export default function Home() {
                 >
                   <FaUser className="text-6xl mx-auto mb-4 text-green-500" />
                   <h2 className="text-4xl font-bold">Team Member</h2>
-                  <p className="text-4xl ">Abdullah Faleh Alotaibi</p>
+                  <p className="text-4xl ">Member 1</p>
                 </div>
                 <div
                   className={`slide ${
@@ -281,7 +281,7 @@ export default function Home() {
                 >
                   <FaUser className="text-6xl mx-auto mb-4 text-green-700"/>
                   <h2 className="text-4xl font-bold">Team Member</h2>
-                  <p className="text-4xl ">Saad Thaar Alqahtani</p>
+                  <p className="text-4xl ">Memeber 2</p>
                 </div>
               </div>
             </div>
